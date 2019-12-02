@@ -74,24 +74,24 @@ void *do_chat(void *arg)
 		memset(chatData, 0, sizeof(chatData));
 		if((n = read(c_socket, chatData, sizeof(chatData))) > 0) {
 			//write chatData to all clients
-			strcpy(tempData, chatData);
-			ptr = strstr(tempData,"/w");
-			if(ptr==NULL){
-				for(i=0;i<MAX_CLIENT;i++){
+			strcpy(tempData, chatData); //chatData를 tempData로 복사
+			ptr = strstr(tempData,"/w"); //tempData에서 /w가 있는지 확인하는 변수
+			if(ptr==NULL){ //귓속말이 없으면
+				for(i=0;i<MAX_CLIENT;i++){//유저 전체에게 chatData를 보낸다.
 					if(user[i].list_c != INVALID_SOCK && user[i].list_c != c_socket) 
 						write(user[i].list_c,chatData,n);
 				}
-				if(strstr(chatData,escape) != NULL){
-					popClient(c_socket);
+				if(strstr(chatData,escape) != NULL){//chatData에 escape문자가 있으면
+					popClient(c_socket); //내보내기
 					break;
 				}
 			}
-			else{
+			else{ //귓속말을 했을 때
 				recive = strtok(chatData," ");
 				whi = strtok(NULL,"/w ");
 				send = strtok(NULL," ");
 				for(i=0;i<MAX_CLIENT;i++){
-					if(strcmp(user[i].list_cname,whi)==0){
+					if(strcmp(user[i].list_cname,whi)==0){ //귓속말을 전할 유저의 아이디를 비교
 						write(user[i].list_c,chatData,strlen(chatData));
 						write(user[i].list_c,send,strlen(send));
 					}
@@ -110,24 +110,24 @@ int pushClient(int c_socket) {
 	memset(cuser,0,sizeof(cuser));
 	
 	for(i=0;i<MAX_CLIENT;i++){
-		pthread_mutex_lock(&mutex);
+		pthread_mutex_lock(&mutex);//user[i].list_c가 겹치지 않도록 락을 걸어둔다.
 		if(user[i].list_c == INVALID_SOCK) {
 			user[i].list_c = c_socket;
-			if((n=read(c_socket,cuser,sizeof(cuser))) > 0){
-				strcpy(user[i].list_cname,cuser);
+			if((n=read(c_socket,cuser,sizeof(cuser))) > 0){//정상적으로 실행 됐을 때
+				strcpy(user[i].list_cname,cuser);//유저의 닉네임 설정
 			}
-			pthread_mutex_unlock(&mutex);
+			pthread_mutex_unlock(&mutex);//락을 풀어줌
 			return i;
 		}
 		pthread_mutex_unlock(&mutex);
 	}
-	if(i == MAX_CLIENT)
+	if(i == MAX_CLIENT)//닉네임이 겹칠경우
 		return -1;
 }
 int popClient(int c_socket)
 {
 	int i;
-    close(c_socket);
+    close(c_socket);//종료
 	//REMOVE c_socket from list_c array.
     for(i=0;i<MAX_CLIENT;i++){
 		pthread_mutex_lock(&mutex);
